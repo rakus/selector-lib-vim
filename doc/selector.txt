@@ -1,0 +1,528 @@
+*rks-selector.txt*
+Author: Ralf Schandl
+License: Same terms as Vim itself (see |license|)
+
+                  SELECTOR PLUG-IN
+
+A selector window or popup.                                     *rks-selector*
+
+
+==============================================================================
+Content
+
+    Introduction .............. |rks-selector-intro|
+    Functions ................. |rks-selector-functions|
+    Selector Options........... |rks-selector-options|
+    Callback .................. |rks-selector-callback|
+    Titled List................ |rks-selector-tlist|
+    Hideing and Unhideing...... |rks-selector-hide|
+    Examples .................. |rks-selector-examples|
+
+==============================================================================
+INTRODUCTION                                              *rks-selector-intro*
+
+The selector plug-in provides functions to display or handle selection lists.
+Depending on the version of Vim and/or the given options the selection list is
+either displayed in a new window or in a |popup-window|.
+
+When the user selects a entry from the selection list by pressing <Enter> or
+<Space> a provided callback function is called with the selected entry and the
+pressed key as parameter.
+
+Beside this the caller can provide additional keys it wants to handle. If any
+of this keys is pressed the provided callback is called with the selected
+entry and the pressed key as parameter.
+
+NOTE: The following is about a selector displayed in a popup. A selector
+displayed in a window is just a normal Vim window/buffer and the normal Vim
+functionality applies.
+
+Predefined Keys
+---------------
+
+`j`, `k`, <Down>, <Up>  Move down/up in the list.
+
+<C-F>, <C-B>, <PageDown>, <PageUp>
+                    Page down/up in the list.
+
+`g`                   Move to the top of the list.
+
+`G`                   Move to the end of the list.
+
+`h`, `l`, `0`, `$`          Scroll the list text left/right. `0` scrolls the start of
+                    the current line into view, `$` the end.
+		    NoOp when 'wrap' is set.
+
+`W`                   Toggles text wrapping.
+
+`?`                   Shows another popup with help information.
+
+`q`                   Quits the selector.
+
+`/`                   Enables filtering. See below. (Optional)
+
+`Q`                   Resets filtering.
+
+
+Filtering
+---------
+
+The popup selector does not support searching for an entry, but supports
+filtering. That means that the content of the selector is filtered based on a
+given filter string. Filtering is enabled by default, but can be disabled via
+option.
+
+Filtering is started by pressing `/`. Then the popup title is changed to
+`Filter:` with a simulated cursor after it and used as a input field. The
+input field only allows the input of characters and the backspace key. No
+moving of the cursor is possible. Additional <C-w> is supported to clear the
+input. The input is a |regular-expression|.
+
+The filtering is done incrementally with every edit change in the input field.
+
+After pressing <Enter> the input field is closed and the popup selector can be
+navigated like normal.
+
+To reset the filtering, press `Q` and the unfiltered list is shown again.
+
+When pressing `/` while in filtering mode, the filter input is opened again
+and the filter expression can be edited.
+
+Getting Help
+------------
+A popup with key help is shown when hitting `?`.
+
+Here is the help from one of the examples (see end of file):
+>
+    ╔[ Help ]══════════════════════════════════╗
+    ║ j,k           move down/up               ║
+    ║ h,l,0,$       scroll left/right          ║
+    ║ <C-F>,<C-B>   page down/up               ║
+    ║ g,G           goto top/bottom            ║
+    ║ W             toggle wrapping            ║
+    ║ /             filter content             ║
+    ║ Q             reset filter               ║
+    ║ q             quit                       ║
+    ║ ---                                      ║
+    ║ <Enter>       open file & close selector ║
+    ║ o             open file                  ║
+    ╚══════════════════════════════════════════╝
+
+All keys above `---` are handled by the selector, all below by the caller.
+
+
+Differences between Selector Popup and Selector Window
+------------------------------------------------------
+The Selector Window is a simplified variant of the Selector Popup. Not all
+features are supported with a window.
+  - filtering is not supported
+  - help (see |rks-selector-navigation|)
+
+A window is used instead of a popup if:
+  - the Vim version is smaller 8.1.2188
+  - a window is explicitly requested (see option `type` in
+    |rks-selector-options|).
+  - the variable `g:SelectorForceType` is set to "window" and the option
+    `type` is not set to `popup`.
+  - in neovim, as it doesn't support popups yet
+
+
+==============================================================================
+FUNCTIONS                                             *rks-selector-functions*
+
+selector#Selector({title}, {entry-list}, {callback}, {options})
+		Opens a new selector to display a selection list and returns
+		the |windowID|.  See |entry-list|. The {callback} is either a
+		function name or a |Funcref|. See |rks-selector-callback| for
+		details. The possible {options} are described in
+		|rks-selector-options|.
+
+selector#PopupSupported()
+		Answers with TRUE, if the current version of Vim supports
+		|popup-windows|. For all versions greater 8.1.2188 TRUE is
+		returned. This is just the version I used for development.
+
+selector#UpdateTitle({id}, {title})
+                Updates the title of a popup selector.
+		NOTE: NoOp in a window selector.
+
+selector#UpdateContent({id}, {entry-list} [, {line}])
+		Replaces the content of the selector with the given list.
+		If line is given and greater 0, the cursor is moved to
+		that line.
+
+selector#UnHide({id})
+		Unhides the selector with the given {id}. This {id} is the return
+		value of `selector#Selector(...)`. If {id} is invalid a
+		exception is thrown.
+		NOTE: NoOp for a window selector.
+
+
+Utilities
+---------
+
+selector#ListToSelectorList({list})
+		Creates a |entry-list| from the given list of strings. All
+		empty items are ignored.
+
+selector#StringToSelectorList({title}, {string}, {pattern})
+		Creates a |entry-list| from the given string split at
+		{pattern} (see |split()|). All empty items are ignored.
+
+
+==============================================================================
+ENTRY LIST                              *entry-list* *rks-selector-entry-list*
+
+The entry list for a selector is a list of dictionaries containing at least
+the field `Display`. So in the simplest case it looks like this:
+>
+    [
+      { 'Display': 'First entry' },
+      { 'Display': 'Second entry' },
+      { 'Display': 'Third entry' }
+    ]
+<
+The following keys are used by the selector.
+
+`Display`      This is the text that is displayed in the selector.
+	     The only REQUIRED field.
+
+`Icon`         Optional icon displayed before the Display text. Either all
+	     entries (except those with childrens) should have a Icon or
+	     none. Default: None
+
+`Selectable`   Can be set to FALSE to prevent the entry from being
+	     selected in the selector. If not present defaults to TRUE.
+
+`Childs`       Optional list of childs of this entry. Every entry with the
+             field Childs is handled as a folder.
+
+`Open`         Companion of `Childs`. Whether the child nodes should be/are
+	     displayed. Changed by the selector when a folder-like entry is
+	     expanded or collapsed.
+
+`Hide`         If TRUE, don't show the entry in the selector. Default FALSE.
+             Useful when a already created list should be filtered. Like
+	     hiding/unhiding all backup files in a file list.
+
+Beside this keys the dictionary may contain any number of additional entries.
+It is recommended to use lower case key names for custom fields.
+
+When a entry is selected the dictionary is handed to the callback.
+
+==============================================================================
+SELECTOR OPTIONS                                        *rks-selector-options*
+
+This are the options that can be given when creating a new selctor.
+
+`type`		Could be either "popup" or "window" to select the type of
+                selector. Default is determined by Vim capabilities.
+
+`select_help`	Help text for <Enter>/<Space>.
+
+`disable_select`  If TRUE, the selector does not react on <Enter>/<Space> .
+
+`select_close`	By default the selector is closed on <Enter>. If this is
+		FALSE the selector acts on the return code of the
+		callback.
+
+`wrapped` 	If FALSE, the popup selector starts with |'nowrap'|.
+
+`cursor_re`	After opening the selector the cursor is positioned on the
+		first entry matching the given regex.
+
+`support_filter`  Popup only! Whether the popup should support filtering the
+		content. Default is TRUE.
+
+`position`	Defines the position of the selector popup on the screen.
+		Values:
+		`g:selector#POPUP_CENTER`:  Center of screen, the default.
+		`g:selector#POPUP_AWAY`:    If the cursor is in the upper
+					  half of the screen use `POPUP_BOT`,
+					  else `POPUP_TOP`.
+		`g:selector#POPUP_CURSOR`:  Directly above or below the
+		                          cursor.
+                The following values are self explanatory:
+		`g:selector#POPUP_TOP`, `g:selector#POPUP_TOP_LEFT`,
+		`g:selector#POPUP_TOP_RIGHT`, `g:selector#POPUP_BOT`,
+		`g:selector#POPUP_BOT_LEFT`, `g:selector#POPUP_BOT_RIGHT`
+
+`width`           Width of the popup in PERCENT of the (screenwidth - 2).
+                Min 1, Max 100.  Default is 100.
+                Invalid values default to 100.
+		For window selector this fixed to 1/3.
+
+`width_flex`      Whether the `width` defines a maximum. The selector is sized
+		according to its content with a maximum as defined by `width`.
+		For window selector this fixed FALSE.
+
+`height`          Height of the popup in PERCENT of the (screenheight -2).
+                Min 1, Max 100.  Default is 100.
+                Invalid values default to 100.
+		For window selector this fixed to 1/3.
+
+`height_flex`     Whether the `height` defines a maximum. The selector is sized
+		according to its content with a maximum as defined by `height`.
+		For window selector this fixed FALSE.
+
+`mappings`	List of custom mapping. Every entry is a dictionary with `key`
+		and `help` and a optional `item`. The value of `item` is
+		either FALSE or TRUE and describes whether a
+		selectable item is needed. If `item` is TRUE and no
+		selectable item is below the cursor, the callback is not
+		called. If `item` is FALSE, the callback might be called
+		with an empty dictionary.
+		Example: >
+		options.mappings = [
+		    \ #{ key: 'd', item: v:true, help: 'show details of selected entry' },
+		    \ #{ key: 'r', item: v:true, help: 'remove selected entry' }
+		    \ #{ key: '<F5>', item: v:false, help: 'refresh content' }
+		    \ ]
+<
+`user_data`      A dictionary with caller provided data. This will be handled to
+               callback unchanged.
+
+The following are the default values. Note that the default for `type` is
+determined by Vims capabilities.
+>
+    {
+      select_help: 'select entry & close selector',
+      disable_select: v:false,
+      select_close: v:true,
+      wrapped: v:true,
+      cursor_re: '',
+      support_filter: v:true,
+      position: g:selector#POPUP_CENTER,
+      width: 100,
+      width_flex: v:true,
+      height: 100,
+      height_flex: v:true,
+      mappings: [],
+      user_data: {}
+    }
+<
+
+
+==============================================================================
+CALLBACK                                              *rks-selector-callback*
+
+A callback is a function with the following definition: >
+
+    ExampleCallback(id, user_data, key, item)
+<
+Where:
+
+`id`        The window id of the selector (either popup or window).
+	  This can be used to execute commands in the context of the selector.
+	  See |win_execute()|. The `id` is needed for calls to
+	  `selector#UpdateContent`.
+
+`user_data` The user data provided by the caller in the selector options (see
+          above). If the user didn't provide user data, this is a empty
+	  dictionary. This can be used to share information between callback
+	  invocations.
+
+`key`       The key that was pressed to trigger the invocation of the
+	  callback. Special values:
+	  - <SELECT> - a entry was selected with <Enter> or <Space>
+	  - <EXPAND> - a folder-like entry is about to be expanded. The
+	               callback might want to lazy-load child entries.
+	  - <COLLAPSE> - a folder-like entry is about to being collapsed
+
+`item`      The active item when the given key was pressed.
+	  NOTE: Depending on how the key for the callback is defined, the item
+          might be an empty dictionary.
+
+If the `key` is <SELECT>, the selector will be closed, expept the option
+`select_close` is set to FALSE.
+
+For all other keys, the selector acts on the return code of the callback:
+
+`selector#CB_RC_OK`    (0)  The selector stays as is.
+`selector#CB_RC_HIDE`  (1)  The selector becomes hidden.
+`selector#CB_RC_CLOSE` (2)  The selector will be closed. The callback is not
+			  called again.
+
+NOTE: The callback is executed in the context of the window that was active
+when the selector was started.
+
+
+==============================================================================
+HIDEING AND UNHIDEING                                     *rks-selector-hide*
+
+NOTE: Currently only implemented for popup selectors!
+
+A selector window can be hided and unhided. This is useful when creating the
+selector content is time consuming or the state of the popup (like cursor
+line) should be kept.
+
+A selector becomes hidden when the callback returns `selector#CB_RC_HIDE` and
+can be unhided by calling the function `selector#UnHide`.
+
+A simple example in a plugin:
+>
+    nnoremap <F2> :call <SID>OpenMySelector()<cr>
+
+    let s:MySelector = -1
+
+    function s:OpenMySelector()
+      if s:MySelector < 0 || empty(popup_getpos(s:MySelector))
+        let s:MyPlugin = s:MySelector()
+      else
+        call selector#UnHide(s:MySelector)
+      endif
+    endfunction
+
+    function s:MySelector()
+       ...
+       let id = selector#Selector("My Stuff", list,
+           \ function("s:MySelectorCallback", ...)
+       ...
+       return id
+    endfunction
+
+    function s:MySelectorCallback(id, user_data, key, item)
+      if a:key == '<F2>'
+        return selector#CB_RC_HIDE
+      else if ...
+        ...
+      endif
+    endfunction
+
+
+
+
+==============================================================================
+EXAMPLES                                              *rks-selector-examples*
+
+Small Example: The command `:LS` create a selector popup with the files in the
+current directory.  If an entry is selected open the file. If 'o' is pressed
+open the file under the cursor, but stay in the selector popup.
+>
+    command! LS call SelectExample()
+
+    function! OpenFile(id, user_data, key, item)
+      execute "edit " . a:item.Display
+    endfunction
+
+    function! SelectExample()
+      let entry_list = []
+      for f in systemlist('ls')
+        call add(entry_list, #{ Display: f })
+      endfor
+      " Could be simplified using support function:
+      " let entry_list = selector#ListToSelectorList(systemlist('ls'))
+
+      call selector#Selector("ls", entry_list, function("OpenFile"), #{
+            \ select_help: 'open file & close selector',
+            \ mappings: [#{ key: 'o', item: 1, help: 'open file' }]
+            \ })
+    endfunction
+<
+
+Based on the previous example here a small "file manager":
+>
+    command! Fm call FileManager()
+
+    " popup-filter to close on any key
+    function! s:CloseFilter(id, key)
+      if a:key == 'q'
+        call popup_close(a:id)
+      endif
+      return 1
+    endfunction
+
+    function! s:OpenFile(id, user_data, key, item)
+      let f = a:item.Display
+      let f = substitute(f, '[*/=>@|]$', '', '')
+      if a:key == 'i'
+        " show details
+
+        call popup_dialog(systemlist('ls -ldF ' . f . ' && file -b ' . f), #{
+              \ zindex:400,
+              \ filter: function('s:CloseFilter'),
+              \ highlight: 'WarningMsg'})
+        return g:selector#CB_RC_OK
+      endif
+
+      if f == '..'
+        let f = a:item.dir
+        if f == '.'
+          let list = s:GetFiles('')
+        else
+          let list = s:GetFiles(f)
+        endif
+        call selector#UpdateContent(a:id, list)
+        return g:selector#CB_RC_OK
+      endif
+
+      if isdirectory(f)
+        let list = s:GetFiles(f)
+        call selector#UpdateContent(a:id, list)
+        return g:selector#CB_RC_OK
+      else
+        execute "edit " . a:item.Display
+        return a:key == 'o' ? g:selector#CB_RC_OK:g:selector#CB_RC_CLOSE
+      endif
+    endfunction
+
+    function! s:GetFiles(dir)
+      if a:dir == '.' || a:dir == ''
+        let list = selector#ListToSelectorList(systemlist('ls -F 2>/dev/null'))
+      else
+        let list = selector#ListToSelectorList(
+              \ systemlist('ls -FdD ' . a:dir . '/* 2>/dev/null'))
+        call insert(list,
+              \ #{Display:'..', dir:fnamemodify(a:dir, ":h") }, 0)
+      endif
+      return list
+    endfunction
+
+    function! FileManager()
+      let list = s:GetFiles('')
+      call selector#Selector("ls", list, function("s:OpenFile"), #{
+            \ select_help: 'open file or directory if file close selector',
+            \ select_close: 0,
+            \ position: g:selector#POPUP_TOP_LEFT,
+            \ mappings: [
+            \   #{ key: 'o', item: 1, help: 'open file or directory' },
+            \   #{ key: 'i', item: 1, help: 'file details' }]
+            \ })
+    endfunction
+<
+
+"OldFilesSelector": A selector for |v:oldfiles|:
+>
+    command! Oldfiles call OldfilesSelector()
+
+    function! s:SelectCallback(id, user_data, key, item)
+      if a:key == '<SELECT>' || a:key == "o"
+        let fname = a:item.Display
+        exe 'next ' . fname
+      endif
+    endfunction
+
+    function! OldfilesSelector()
+
+      let displayList = selector#ListToSelectorList(v:oldfiles)
+
+      let popupId =  selector#Selector('Old Files',
+            \ displayList,
+            \ function("s:SelectCallback"), {
+              \ 'type': 'popup',
+              \ 'select_help': 'open file & close selector',
+              \ 'mappings': [
+                \   { 'key': 'o', 'item': 1, 'help': 'open file'},
+                \ ]
+                \ })
+
+      call setwinvar(popupId, "&wrap", 1)
+
+      call matchadd('Title', "[^/]*$", 10, -1, {'window':popupId})
+      return popupId
+    endfunction
+<
+
+
+
+ vim:tw=78:ts=8:noet:ft=help:norl:
