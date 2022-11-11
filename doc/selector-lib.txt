@@ -1,25 +1,25 @@
-*rks-selector.txt*
+*selector-lib.txt*
 Author: Ralf Schandl
 License: Same terms as Vim itself (see |license|)
 
-                  SELECTOR PLUG-IN
+                  SELECTOR LIBRARY PLUG-IN
 
-A selector window or popup.                                     *rks-selector*
+A library plug-in to create selector windows or popups.         *selector-lib*
 
 
 ==============================================================================
 Content
 
-    Introduction .............. |rks-selector-intro|
-    Functions ................. |rks-selector-functions|
-    Selector Options........... |rks-selector-options|
-    Callback .................. |rks-selector-callback|
-    Titled List................ |rks-selector-tlist|
-    Hideing and Unhideing...... |rks-selector-hide|
-    Examples .................. |rks-selector-examples|
+    Introduction .............. |selector-lib-intro|
+    Functions ................. |selector-lib-functions|
+    Selector Options........... |selector-lib-options|
+    Callback .................. |selector-lib-callback|
+    Titled List................ |selector-lib-tlist|
+    Hideing and Unhideing...... |selector-lib-hide|
+    Examples .................. |selector-lib-examples|
 
 ==============================================================================
-INTRODUCTION                                              *rks-selector-intro*
+INTRODUCTION                                              *selector-lib-intro*
 
 The selector plug-in provides functions to display or handle selection lists.
 Depending on the version of Vim and/or the given options the selection list is
@@ -116,26 +116,26 @@ Differences between Selector Popup and Selector Window
 The Selector Window is a simplified variant of the Selector Popup. Not all
 features are supported with a window.
   - filtering is not supported
-  - help (see |rks-selector-navigation|)
+  - help (see |selector-lib-navigation|)
 
 A window is used instead of a popup if:
   - the Vim version is smaller 8.1.2188
   - a window is explicitly requested (see option `type` in
-    |rks-selector-options|).
+    |selector-lib-options|).
   - the variable `g:SelectorForceType` is set to "window" and the option
     `type` is not set to `popup`.
   - in neovim, as it doesn't support popups yet
 
 
 ==============================================================================
-FUNCTIONS                                             *rks-selector-functions*
+FUNCTIONS                                             *selector-lib-functions*
 
 selector#Selector({title}, {entry-list}, {callback}, {options})
 		Opens a new selector to display a selection list and returns
-		the |windowID|.  See |entry-list|. The {callback} is either a
-		function name or a |Funcref|. See |rks-selector-callback| for
-		details. The possible {options} are described in
-		|rks-selector-options|.
+		the |windowID|.  See |selector-lib-entry-list|. The {callback}
+		is either a function name or a |Funcref|. See
+		|selector-lib-callback| for details. The possible {options}
+		are described in |selector-lib-options|.
 
 selector#PopupSupported()
 		Answers with TRUE, if the current version of Vim supports
@@ -171,7 +171,7 @@ selector#StringToSelectorList({title}, {string}, {pattern})
 
 
 ==============================================================================
-ENTRY LIST                              *entry-list* *rks-selector-entry-list*
+ENTRY LIST                                           *selector-lib-entry-list*
 
 The entry list for a selector is a list of dictionaries containing at least
 the field `Display`. So in the simplest case it looks like this:
@@ -211,7 +211,7 @@ It is recommended to use lower case key names for custom fields.
 When a entry is selected the dictionary is handed to the callback.
 
 ==============================================================================
-SELECTOR OPTIONS                                        *rks-selector-options*
+SELECTOR OPTIONS                                        *selector-lib-options*
 
 This are the options that can be given when creating a new selctor.
 
@@ -304,7 +304,7 @@ determined by Vims capabilities.
 
 
 ==============================================================================
-CALLBACK                                              *rks-selector-callback*
+CALLBACK                                              *selector-lib-callback*
 
 A callback is a function with the following definition: >
 
@@ -348,7 +348,7 @@ when the selector was started.
 
 
 ==============================================================================
-HIDEING AND UNHIDEING                                     *rks-selector-hide*
+HIDEING AND UNHIDEING                                     *selector-lib-hide*
 
 NOTE: Currently only implemented for popup selectors!
 
@@ -393,7 +393,7 @@ A simple example in a plugin:
 
 
 ==============================================================================
-EXAMPLES                                              *rks-selector-examples*
+EXAMPLES                                              *selector-lib-examples*
 
 Small Example: The command `:LS` create a selector popup with the files in the
 current directory.  If an entry is selected open the file. If 'o' is pressed
