@@ -203,11 +203,17 @@ function! selectorcore#ShowHelp(ctx)
         endfor
     endif
 
-    call popup_dialog(help, {
-                \ 'title':"[ Help - 'x' to close ]",
-                \ 'zindex':400,
-                \ 'filter': 'popup_filter_menu',
-                \ 'highlight': 'WarningMsg'})
+    if selector#PopupSupported()
+        call popup_dialog(help, {
+                    \ 'title':"[ Help - 'x' to close ]",
+                    \ 'zindex':400,
+                    \ 'filter': 'popup_filter_menu',
+                    \ 'highlight': 'WarningMsg'})
+    else
+        for entry in help
+            echo entry
+        endfor
+    endif
 
 endfunction
 

@@ -109,6 +109,7 @@ function! selectorwindow#Selector(title, list, callback, options)
     endif
     noremap <silent> <buffer> <nowait> g        :1<cr>
     noremap <silent> <buffer> <nowait> W        :set invwrap<cr>
+    noremap <silent> <buffer> ?                 :call selectorwindow#SelectorCallback(b:ctx, "?", 0)<cr>
     if b:ctx.entry_tree
         noremap <silent> <buffer> <nowait> <C-G>    :call selectorwindow#SelectorCallback(b:ctx, "<C-G>", 1)<cr>
     endif

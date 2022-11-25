@@ -113,10 +113,10 @@ All keys above `---` are handled by the selector, all below by the caller.
 
 Differences between Selector Popup and Selector Window
 ------------------------------------------------------
-The Selector Window is a simplified variant of the Selector Popup. Not all
-features are supported with a window.
-  - filtering is not supported
-  - help (see |selector-lib-navigation|)
+The Selector Window is a simplified variant of the Selector Popup. The main
+feature not supported is "filtering". Note that backward search with `?` is
+not supported, as this key is used to display the help text. If popups are
+supported the help is displayed in a popup, else it is just echoed.
 
 A window is used instead of a popup if:
   - the Vim version is smaller 8.1.2188
