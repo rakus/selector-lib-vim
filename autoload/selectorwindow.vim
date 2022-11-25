@@ -116,7 +116,15 @@ function! selectorwindow#Selector(title, list, callback, options)
 
     noremap <silent> <buffer> <nowait> x        :call selectorwindow#CloseSelector(b:ctx)<cr>
 
-    exe "1"
+    if selector_options.cursor_re != ''
+        try
+            call win_execute(win_getid(), "/" . selector_options.cursor_re)
+        catch
+            echo "ERROR: cursor_re failed: " . v:exception
+        endtry
+    else
+        exe "1"
+    endif
 endfunction
 
 function! selectorwindow#UpdateContent(ctx, list, line=0)
