@@ -28,14 +28,30 @@ const selector#POPUP_BOT_RIGHT = 'bot_right'
 const selector#POPUP_AWAY      = 'away'
 const selector#POPUP_CURSOR    = 'cursor'
 
+function! selector#PopupSupported()
+    if has("nvim")
+        return 0
+    elseif v:version > 801 || (v:version == 801 && has("patch-8.1.2188"))
+        " Might work ok with a earlier version than 8.1.2188, but that's the
+        " version I used for development.
+        return 1
+    else
+        return 0
+    endif
+endfunction
+
+const s:popupSupported = selector#PopupSupported()
+
 function! selector#Selector(title, list, callback, options)
 
     let type = ""
 
-    if selector#PopupSupported()
-        let type = g:selector#POPUP
-    else
-        let type = g:selector#WINDOW
+    if exists("a:options.type")
+        if a:options.type == g:selector#POPUP || a:options.type == g:selector#WINDOW
+            let type = a:options.type
+        else
+            throw "Selector: Invalid options.type: " . a:options.type
+        endif
     endif
 
     if exists("g:SelectorForceType")
@@ -46,30 +62,22 @@ function! selector#Selector(title, list, callback, options)
         endif
     endif
 
-    if exists("a:options.type")
-        if a:options.type == g:selector#POPUP || a:options.type == g:selector#WINDOW
-            let type = a:options.type
+    if type == ""
+        if s:popupSupported
+            let type = g:selector#POPUP
         else
-            throw "Selector: Invalid options.type: " . a:options.type
+            let type = g:selector#WINDOW
         endif
+    endif
+
+    if ! s:popupSupported
+        let type = g:selector#WINDOW
     endif
 
     if type == g:selector#POPUP
         return selectorpopup#Selector(a:title, a:list, a:callback, a:options)
     else
         return selectorwindow#Selector(a:title, a:list, a:callback, a:options)
-    endif
-endfunction
-
-function! selector#PopupSupported()
-    " Might work ok with a earlier version than 8.1.2188, but that's the
-    " version I used for development.
-    if v:version > 801
-        return 1
-    else if v:version == 801 && has("patch-8.1.2188")
-        return 1
-    else
-        return 0
     endif
 endfunction
 
