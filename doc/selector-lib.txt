@@ -21,9 +21,9 @@ Content
 ==============================================================================
 INTRODUCTION                                              *selector-lib-intro*
 
-The selector plug-in provides functions to display or handle selection lists.
-Depending on the version of Vim and/or the given options the selection list is
-either displayed in a new window or in a |popup-window|.
+The selector plug-in library provides functions to display or handle selection
+lists.  Depending on the version of Vim and/or the given options the selection
+list is either displayed in a new window or in a |popup-window|.
 
 When the user selects a entry from the selection list by pressing <Enter> or
 <Space> a provided callback function is called with the selected entry and the
@@ -124,7 +124,7 @@ A window is used instead of a popup if:
     |selector-lib-options|).
   - the variable `g:SelectorForceType` is set to "window" and the option
     `type` is not set to `popup`.
-  - in neovim, as it doesn't support popups yet
+  - in neovim
 
 
 ==============================================================================
